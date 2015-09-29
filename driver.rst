@@ -9,7 +9,8 @@ General Driver Issues
 Driver Initialization
 ---------------------
 
-Init::
+.. code-block:: python
+
     __init__(self, execute=self.execute, *args, **kwargs)
 
 
@@ -34,7 +35,9 @@ Commonly raised exceptions::
 
 Volume Stats
 ------------
-::
+
+.. code-block:: python
+
     get_volume_stats(self, refresh=False)
 
 The get_volume_stats method is used by the volume manager to collect information from the driver instance related to information about the driver, available and used space, and driver/backend capabilities.
@@ -82,3 +85,89 @@ And the following optional fields:
 
 
 The returned dict may also contain a list, "pools", which has a similar dict for each pool being used with the backend.
+
+
+Driver Methods
+==============
+
+Create Volume
+-------------
+.. code-block:: python
+
+    create_volume(self, volume)
+
+Create a volume on the storage backend.
+
+Returns:
+  - dict of database updates for the new volume
+
+This method is responsible only for storage allocation on the backend.
+
+It should not export a LUN or actually make this storage available
+for use, this is done in a later call.
+
+Delete Volume
+-------------
+.. code-block:: python
+
+    delete_volume(self, volume)
+
+Delete a volume from the storage backend.
+
+Prerequisites:
+  - volume is not attached
+  - volume has no snapshots
+
+If the volume cannot be deleted from the backend, this call
+typically fails with VolumeIsBusy or VolumeBackendAPIException.
+
+If the driver can talk to the backend and detects that the volume
+is no longer preset, this call should succeed and allow Cinder to
+complete the process of deleting the volume.
+
+
+Create Volume From Snapshot
+---------------------------
+.. code-block:: python
+
+    create_volume_from_snapshot(self, volume, snapshot)
+
+Create a new volume from a snapshot.
+
+Prerequisites:
+  - snapshot is not attached
+
+Returns:
+  - dict of database updates for the new volume
+
+If the snapshot cannot be found, this call should succeed and allow
+Cinder to complete the process of deleting the snapshot.
+
+
+Clone Image
+-----------
+.. code-block:: python
+
+    clone_image(self, volume, image_location, image_id,
+                image_meta, image_service)
+
+Create a volume efficiently from an image.
+
+This method allows a driver to opt in to copying images in a more
+efficient manner if they can be reached by the volume driver.
+
+Returns:
+  - a tuple of (update_dict, Boolean)
+    where update_dict is a dictionary of database updates for the volume,
+    and a Boolean indicating whether the clone occurred.
+
+This method is optional.  If it is not implemented, the image is
+copied onto the volume by attaching the image source and volume on
+the volume service host and copying the data directly.  Drivers not
+implementing this method should return::
+  ({}, False)
+
+The ability to return False indicating "did not succeed, fall back
+to the standard copy method" means that drivers can implement this
+in a best-effort fashion where it may only work if certain requirements
+are met in the deployment.
