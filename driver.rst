@@ -32,7 +32,10 @@ The __init__ method is responsible for basic driver module initialization.
 This method must succeed for the driver code to be loaded at all.  It should initialize all member variables that are used throughout the driver.
 
 
-check_for_setup_error::
+Check for setup error
+---------------------
+.. code-block:: python
+
    check_for_setup_error(self)
 
 This method is responsible for driver initialization that involves loading
